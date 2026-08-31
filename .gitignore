@@ -1,0 +1,13 @@
+.venv/
+runtime_data/
+data/
+exports/
+wheels/
+__pycache__/
+*.py[cod]
+*.duckdb
+*.parquet
+*.parquet.tmp
+*.log
+*.xlsx
+*.xls
