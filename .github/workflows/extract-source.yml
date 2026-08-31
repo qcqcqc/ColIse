@@ -1,0 +1,52 @@
+name: Extract archived source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/extract-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract QoE Analyzer v2.0.4 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE="archives/ColIse_QoEAnalyzer_v2.0.4_source.zip"
+          test -f "$ARCHIVE"
+          TMP_DIR="$(mktemp -d)"
+          unzip -q "$ARCHIVE" -d "$TMP_DIR"
+          SRC="$TMP_DIR/ColIse_QoEAnalyzer_v2.0.4_source"
+          test -f "$SRC/app.py"
+          test -f "$SRC/analyzer.py"
+          test -d "$SRC/static"
+          cp -a "$SRC/." ./
+          rm -rf "$TMP_DIR"
+
+      - name: Commit expanded source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .gitignore README.md VERSION.txt analyzer.py app.py schema.py requirements.txt \
+            start.bat diagnose.bat install_offline.bat download_offline_wheels.bat build_exe.bat \
+            make_sample_data.py static sample_data
+          if git diff --cached --quiet; then
+            echo "Source already expanded; nothing to commit."
+            exit 0
+          fi
+          git commit -m "Expand QoE Analyzer v2.0.4 source files [skip ci]"
+          git push origin HEAD:main
